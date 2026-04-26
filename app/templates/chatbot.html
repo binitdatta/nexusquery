@@ -1,0 +1,535 @@
+{% extends "base.html" %}
+{% block title %}NexusQuery — Chat{% endblock %}
+
+{% block extra_head %}
+<style>
+/* ── Layout ── */
+.chat-wrapper {
+  height: calc(100vh - 60px);
+  display: flex;
+  overflow: hidden;
+}
+
+/* ── Sidebar ── */
+.chat-sidebar {
+  width: 280px;
+  flex-shrink: 0;
+  background: var(--nq-surface);
+  border-right: 1px solid var(--nq-border);
+  display: flex;
+  flex-direction: column;
+  padding: 1.2rem;
+  overflow-y: auto;
+}
+.sidebar-title {
+  font-family: var(--nq-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  color: var(--nq-muted);
+  text-transform: uppercase;
+  margin-bottom: 0.8rem;
+}
+.sample-q {
+  background: var(--nq-card);
+  border: 1px solid var(--nq-border);
+  border-radius: 8px;
+  padding: 0.6rem 0.8rem;
+  font-size: 0.82rem;
+  color: var(--nq-muted);
+  cursor: pointer;
+  margin-bottom: 0.5rem;
+  transition: all 0.15s;
+  line-height: 1.4;
+}
+.sample-q:hover {
+  border-color: var(--nq-accent);
+  color: var(--nq-text);
+  background: rgba(0,212,255,0.05);
+}
+.schema-pill {
+  font-family: var(--nq-mono);
+  font-size: 0.68rem;
+  background: rgba(123,94,248,0.1);
+  border: 1px solid rgba(123,94,248,0.2);
+  color: #a78bfa;
+  border-radius: 4px;
+  padding: 2px 7px;
+  margin-bottom: 4px;
+  display: inline-block;
+}
+
+/* ── Chat main ── */
+.chat-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ── Messages area ── */
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.5rem;
+  scroll-behavior: smooth;
+}
+.chat-messages::-webkit-scrollbar { width: 4px; }
+.chat-messages::-webkit-scrollbar-track { background: transparent; }
+.chat-messages::-webkit-scrollbar-thumb { background: var(--nq-border); border-radius: 2px; }
+
+/* ── Message bubbles ── */
+.msg-row {
+  display: flex;
+  margin-bottom: 1.2rem;
+  animation: msgIn 0.25s ease both;
+}
+@keyframes msgIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.msg-row.user { justify-content: flex-end; }
+.msg-row.assistant { justify-content: flex-start; }
+
+.msg-avatar {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.8rem;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.msg-avatar.user-av {
+  background: rgba(0,212,255,0.15);
+  color: var(--nq-accent);
+  margin-left: 10px;
+}
+.msg-avatar.bot-av {
+  background: rgba(123,94,248,0.15);
+  color: var(--nq-accent2);
+  margin-right: 10px;
+}
+
+.msg-bubble {
+  max-width: 72%;
+  border-radius: 12px;
+  padding: 0.75rem 1rem;
+  font-size: 0.9rem;
+  line-height: 1.65;
+}
+.msg-bubble.user {
+  background: rgba(0,212,255,0.1);
+  border: 1px solid rgba(0,212,255,0.2);
+  color: var(--nq-text);
+}
+.msg-bubble.assistant {
+  background: var(--nq-card);
+  border: 1px solid var(--nq-border);
+  color: var(--nq-text);
+}
+.msg-bubble.error-bubble {
+  background: rgba(255,107,53,0.08);
+  border-color: rgba(255,107,53,0.3);
+}
+
+/* SQL badge inside bubble */
+.sql-disclosure {
+  margin-top: 0.7rem;
+  border-top: 1px solid var(--nq-border);
+  padding-top: 0.6rem;
+}
+.sql-toggle {
+  font-family: var(--nq-mono);
+  font-size: 0.7rem;
+  color: var(--nq-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: none;
+  border: none;
+  padding: 0;
+  transition: color 0.15s;
+}
+.sql-toggle:hover { color: var(--nq-accent); }
+.sql-code {
+  font-family: var(--nq-mono);
+  font-size: 0.73rem;
+  color: #a9c7ff;
+  background: rgba(0,0,0,0.3);
+  border-radius: 6px;
+  padding: 0.7rem;
+  margin-top: 0.5rem;
+  white-space: pre-wrap;
+  word-break: break-all;
+  display: none;
+}
+.sql-code.visible { display: block; }
+
+.row-badge {
+  font-family: var(--nq-mono);
+  font-size: 0.65rem;
+  background: rgba(61,214,140,0.1);
+  border: 1px solid rgba(61,214,140,0.2);
+  color: #3dd68c;
+  border-radius: 4px;
+  padding: 1px 6px;
+  margin-left: 8px;
+}
+
+/* ── Typing indicator ── */
+.typing-indicator {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0.6rem 0.8rem;
+}
+.typing-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--nq-muted);
+  animation: typingBounce 1.2s ease infinite;
+}
+.typing-dot:nth-child(2) { animation-delay: 0.15s; }
+.typing-dot:nth-child(3) { animation-delay: 0.3s; }
+@keyframes typingBounce {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+  30% { transform: translateY(-6px); opacity: 1; }
+}
+
+/* ── Input bar ── */
+.chat-input-bar {
+  border-top: 1px solid var(--nq-border);
+  padding: 1rem 1.5rem;
+  background: var(--nq-surface);
+}
+.chat-input-wrap {
+  display: flex;
+  gap: 0.6rem;
+  align-items: flex-end;
+  background: var(--nq-card);
+  border: 1px solid var(--nq-border);
+  border-radius: 12px;
+  padding: 0.5rem 0.5rem 0.5rem 1rem;
+  transition: border-color 0.2s;
+}
+.chat-input-wrap:focus-within { border-color: rgba(0,212,255,0.4); }
+#chatInput {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--nq-text);
+  font-family: var(--nq-sans);
+  font-size: 0.92rem;
+  resize: none;
+  max-height: 120px;
+  line-height: 1.5;
+  padding: 4px 0;
+}
+#chatInput::placeholder { color: var(--nq-muted); }
+.send-btn {
+  width: 38px; height: 38px;
+  border-radius: 8px;
+  background: var(--nq-accent);
+  border: none;
+  color: #0b0e14;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+.send-btn:hover { background: #33ddff; transform: scale(1.05); }
+.send-btn:disabled { background: var(--nq-border); color: var(--nq-muted); cursor: not-allowed; transform: none; }
+
+/* ── Status bar ── */
+.status-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.35rem 1.5rem;
+  font-family: var(--nq-mono);
+  font-size: 0.68rem;
+  color: var(--nq-muted);
+  border-top: 1px solid var(--nq-border);
+}
+.status-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--nq-muted);
+  display: inline-block;
+  margin-right: 5px;
+}
+.status-dot.online { background: #3dd68c; box-shadow: 0 0 6px #3dd68c66; }
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .chat-sidebar { display: none; }
+}
+
+/* markdown-ish rendering */
+.msg-bubble strong { color: #e8edf8; }
+.msg-bubble ul { padding-left: 1.2rem; margin: 0.4rem 0; }
+.msg-bubble li { margin-bottom: 0.2rem; }
+.msg-bubble code {
+  font-family: var(--nq-mono);
+  font-size: 0.82em;
+  background: rgba(0,0,0,0.3);
+  padding: 1px 5px;
+  border-radius: 3px;
+  color: #a9c7ff;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="chat-wrapper">
+
+  <!-- ── Sidebar ── -->
+  <aside class="chat-sidebar">
+    <div class="sidebar-title">Sample questions</div>
+
+    <div class="sample-q" onclick="sendSample(this)">Which supplier had the worst on-time delivery in March 2024?</div>
+    <div class="sample-q" onclick="sendSample(this)">Show me total spend by category for Q1 2024</div>
+    <div class="sample-q" onclick="sendSample(this)">Which suppliers are OVER budget in April?</div>
+    <div class="sample-q" onclick="sendSample(this)">Top 5 suppliers by total spend across all months</div>
+    <div class="sample-q" onclick="sendSample(this)">Show defect rate trend for strategic tier suppliers</div>
+    <div class="sample-q" onclick="sendSample(this)">Which categories have the highest invoice variance?</div>
+    <div class="sample-q" onclick="sendSample(this)">Compare OTD% between North America and Asia Pacific suppliers</div>
+    <div class="sample-q" onclick="sendSample(this)">Show me all suppliers with match rate below 80%</div>
+
+    <hr style="border-color:var(--nq-border); margin: 1rem 0;"/>
+
+    <div class="sidebar-title">Gold tables</div>
+    <div>
+      <span class="schema-pill">fact_spend_by_supplier</span>
+      <span class="schema-pill">fact_spend_by_category</span>
+      <span class="schema-pill">fact_otd_by_supplier</span>
+      <span class="schema-pill">fact_invoice_match</span>
+      <span class="schema-pill">fact_budget_variance</span>
+      <span class="schema-pill">fact_defect_rate</span>
+    </div>
+
+    <hr style="border-color:var(--nq-border); margin: 1rem 0;"/>
+
+    <div class="sidebar-title">Actions</div>
+    <button onclick="resetChat()" class="btn btn-sm w-100"
+      style="background:var(--nq-card); border:1px solid var(--nq-border); color:var(--nq-muted); font-size:0.8rem;">
+      <i class="bi bi-arrow-counterclockwise me-1"></i>Reset conversation
+    </button>
+  </aside>
+
+  <!-- ── Chat main ── -->
+  <div class="chat-main">
+
+    <!-- Messages -->
+    <div class="chat-messages" id="chatMessages">
+      <!-- Welcome message -->
+      <div class="msg-row assistant">
+        <div class="msg-avatar bot-av"><i class="bi bi-cpu"></i></div>
+        <div class="msg-bubble assistant">
+          <strong>Welcome to NexusQuery.</strong><br>
+          I translate your procurement questions into SQL, query your
+          Azure Databricks Gold tables, and explain the results in plain English.<br><br>
+          Try: <em>"Which supplier had the worst on-time delivery in March?"</em><br><br>
+          <span style="color:var(--nq-muted); font-size:0.82rem;">
+            <i class="bi bi-info-circle me-1"></i>
+            Make sure your Databricks cluster is running before asking data questions.
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Input bar -->
+    <div class="chat-input-bar">
+      <div class="chat-input-wrap">
+        <textarea id="chatInput" rows="1"
+          placeholder="Ask a procurement question…"
+          onkeydown="handleKey(event)"
+          oninput="autoResize(this)"></textarea>
+        <button class="send-btn" id="sendBtn" onclick="sendMessage()">
+          <i class="bi bi-send-fill" style="font-size:0.85rem;"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Status bar -->
+    <div class="status-bar">
+      <span>
+        <span class="status-dot online" id="statusDot"></span>
+        <span id="statusText">ready</span>
+      </span>
+      <span>claude-sonnet-4 · databricks sql · adls gen2</span>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const messagesEl = document.getElementById('chatMessages');
+const inputEl    = document.getElementById('chatInput');
+const sendBtn    = document.getElementById('sendBtn');
+const statusDot  = document.getElementById('statusDot');
+const statusText = document.getElementById('statusText');
+
+function setStatus(state, text) {
+  statusText.textContent = text;
+  statusDot.className = 'status-dot' + (state === 'online' ? ' online' : '');
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+}
+
+function sendSample(el) {
+  inputEl.value = el.textContent.trim();
+  autoResize(inputEl);
+  inputEl.focus();
+}
+
+function scrollToBottom() {
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+
+function appendUserMessage(text) {
+  const row = document.createElement('div');
+  row.className = 'msg-row user';
+  row.innerHTML = `
+    <div class="msg-bubble user">${escapeHtml(text)}</div>
+    <div class="msg-avatar user-av"><i class="bi bi-person"></i></div>`;
+  messagesEl.appendChild(row);
+  scrollToBottom();
+}
+
+function appendTyping() {
+  const row = document.createElement('div');
+  row.className = 'msg-row assistant';
+  row.id = 'typingRow';
+  row.innerHTML = `
+    <div class="msg-avatar bot-av"><i class="bi bi-cpu"></i></div>
+    <div class="msg-bubble assistant">
+      <div class="typing-indicator">
+        <div class="typing-dot"></div>
+        <div class="typing-dot"></div>
+        <div class="typing-dot"></div>
+      </div>
+    </div>`;
+  messagesEl.appendChild(row);
+  scrollToBottom();
+}
+
+function removeTyping() {
+  const el = document.getElementById('typingRow');
+  if (el) el.remove();
+}
+
+function appendAssistantMessage(data) {
+  const row = document.createElement('div');
+  row.className = 'msg-row assistant';
+
+  const rowBadge = data.row_count != null
+    ? `<span class="row-badge">${data.row_count} rows</span>`
+    : '';
+
+  const sqlSection = data.sql_generated ? `
+    <div class="sql-disclosure">
+      <button class="sql-toggle" onclick="toggleSql(this)">
+        <i class="bi bi-code-slash"></i> view generated sql${rowBadge}
+        ${data.truncated ? '<span class="row-badge" style="color:#f7c948;border-color:#f7c94855;">truncated</span>' : ''}
+      </button>
+      <pre class="sql-code">${escapeHtml(data.sql_generated)}</pre>
+    </div>` : '';
+
+  const isError = !!data.error;
+  row.innerHTML = `
+    <div class="msg-avatar bot-av"><i class="bi bi-cpu"></i></div>
+    <div class="msg-bubble assistant ${isError ? 'error-bubble' : ''}">
+      ${renderMarkdown(data.assistant_message)}
+      ${sqlSection}
+    </div>`;
+  messagesEl.appendChild(row);
+  scrollToBottom();
+}
+
+function toggleSql(btn) {
+  const pre = btn.nextElementSibling;
+  pre.classList.toggle('visible');
+  const icon = btn.querySelector('i');
+  icon.className = pre.classList.contains('visible')
+    ? 'bi bi-chevron-up' : 'bi bi-code-slash';
+}
+
+async function sendMessage() {
+  const text = inputEl.value.trim();
+  if (!text) return;
+
+  inputEl.value = '';
+  autoResize(inputEl);
+  sendBtn.disabled = true;
+  setStatus('thinking', 'thinking…');
+
+  appendUserMessage(text);
+  appendTyping();
+
+  try {
+    const res = await fetch('/chat/message', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: text }),
+    });
+    const data = await res.json();
+    removeTyping();
+    appendAssistantMessage(data);
+    setStatus('online', 'ready');
+  } catch (err) {
+    removeTyping();
+    appendAssistantMessage({
+      assistant_message: '⚠️ Network error. Please try again.',
+      error: err.message,
+    });
+    setStatus('online', 'ready');
+  } finally {
+    sendBtn.disabled = false;
+    inputEl.focus();
+  }
+}
+
+async function resetChat() {
+  await fetch('/chat/reset', { method: 'POST' });
+  messagesEl.innerHTML = '';
+  appendAssistantMessage({
+    assistant_message: 'Conversation reset. Ask me anything about your procurement data.',
+  });
+}
+
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function renderMarkdown(text) {
+  // Very light markdown: bold, bullet lists, inline code
+  return escapeHtml(text)
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/^[\s]*[-•]\s+(.+)$/gm, '<li>$1</li>')
+    .replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>')
+    .replace(/\n/g, '<br>');
+}
+
+// Focus input on load
+window.addEventListener('load', () => inputEl.focus());
+</script>
+{% endblock %}

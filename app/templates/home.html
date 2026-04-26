@@ -1,0 +1,474 @@
+{% extends "base.html" %}
+{% block title %}NexusQuery — Procurement AI Analytics{% endblock %}
+
+{% block extra_head %}
+<style>
+/* ── Hero ── */
+.hero {
+  min-height: 88vh;
+  display: flex;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+}
+.hero-grid {
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(rgba(0,212,255,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,212,255,0.04) 1px, transparent 1px);
+  background-size: 48px 48px;
+  pointer-events: none;
+}
+.hero-glow {
+  position: absolute;
+  width: 600px; height: 600px;
+  background: radial-gradient(circle, rgba(123,94,248,0.12) 0%, transparent 70%);
+  top: -100px; right: -100px;
+  pointer-events: none;
+}
+.hero-title {
+  font-family: 'Space Mono', monospace;
+  font-size: clamp(2rem, 5vw, 3.6rem);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: #e8edf8;
+}
+.hero-title .line-accent { color: var(--nq-accent); }
+.hero-title .line-dim    { color: var(--nq-muted); font-size: 0.62em; font-weight: 400; }
+.hero-sub {
+  font-size: 1.05rem;
+  color: var(--nq-muted);
+  max-width: 540px;
+  line-height: 1.7;
+  margin-top: 1.2rem;
+}
+.btn-nq {
+  background: var(--nq-accent);
+  color: #0b0e14;
+  font-family: var(--nq-mono);
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 0.7rem 1.8rem;
+  border-radius: 6px;
+  border: none;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+.btn-nq:hover {
+  background: #33ddff;
+  color: #0b0e14;
+  transform: translateY(-1px);
+  box-shadow: 0 0 24px rgba(0,212,255,0.3);
+}
+.btn-nq-outline {
+  background: transparent;
+  color: var(--nq-muted);
+  font-family: var(--nq-mono);
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 0.7rem 1.8rem;
+  border-radius: 6px;
+  border: 1px solid var(--nq-border);
+  text-decoration: none;
+  transition: all 0.2s;
+}
+.btn-nq-outline:hover { border-color: var(--nq-accent); color: var(--nq-accent); }
+
+/* ── Architecture diagram ── */
+.arch-box {
+  background: var(--nq-card);
+  border: 1px solid var(--nq-border);
+  border-radius: 10px;
+  padding: 1rem 1.2rem;
+  font-family: var(--nq-mono);
+  font-size: 0.78rem;
+  color: var(--nq-text);
+  text-align: center;
+  position: relative;
+}
+.arch-box.accent-border { border-color: rgba(0,212,255,0.4); }
+.arch-box.purple-border { border-color: rgba(123,94,248,0.4); }
+.arch-box .arch-label   { font-size: 0.65rem; color: var(--nq-muted); margin-bottom: 4px; }
+.arch-arrow {
+  color: var(--nq-muted);
+  font-size: 1.3rem;
+  display: flex; align-items: center; justify-content: center;
+}
+
+/* ── Limitation card ── */
+.limit-card {
+  background: rgba(255,107,53,0.06);
+  border: 1px solid rgba(255,107,53,0.2);
+  border-radius: 10px;
+  padding: 1.2rem 1.4rem;
+}
+.limit-card .limit-icon { color: var(--nq-warn); font-size: 1.3rem; }
+
+/* ── Comparison table ── */
+.compare-table th { font-family: var(--nq-mono); font-size: 0.78rem; color: var(--nq-muted); font-weight: 400; border-color: var(--nq-border) !important; }
+.compare-table td { border-color: var(--nq-border) !important; font-size: 0.88rem; }
+.compare-table .yes { color: #3dd68c; }
+.compare-table .no  { color: var(--nq-warn); }
+.compare-table .partial { color: #f7c948; }
+
+/* ── Section titles ── */
+.section-eyebrow {
+  font-family: var(--nq-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.15em;
+  color: var(--nq-accent);
+  text-transform: uppercase;
+  margin-bottom: 0.5rem;
+}
+.section-title {
+  font-size: 1.9rem;
+  font-weight: 600;
+  color: #d8e2f4;
+  line-height: 1.25;
+}
+
+/* ── Animations ── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fadeUp 0.6s ease both; }
+.delay-1 { animation-delay: 0.1s; }
+.delay-2 { animation-delay: 0.2s; }
+.delay-3 { animation-delay: 0.3s; }
+.delay-4 { animation-delay: 0.4s; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- ═══ HERO ═══════════════════════════════════════════════════ -->
+<section class="hero">
+  <div class="hero-grid"></div>
+  <div class="hero-glow"></div>
+  <div class="container py-5">
+    <div class="row align-items-center g-5">
+      <div class="col-lg-6">
+        <div class="fade-up">
+          <p class="section-eyebrow">Azure Databricks × Anthropic Claude</p>
+          <h1 class="hero-title">
+            <span class="line-accent">Ask procurement</span><br>
+            questions in plain<br>
+            English.<br>
+            <span class="line-dim">// get SQL-powered answers</span>
+          </h1>
+          <p class="hero-sub">
+            NexusQuery translates natural language into Databricks SQL,
+            executes it against your Gold Delta tables in ADLS Gen2,
+            and narrates the findings — no SQL knowledge required.
+          </p>
+          <div class="d-flex gap-3 mt-4">
+            <a href="/chatbot" class="btn-nq"><i class="bi bi-chat-dots me-2"></i>Open Chat</a>
+            <a href="#architecture" class="btn-nq-outline">Architecture</a>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-6 fade-up delay-2">
+        <!-- Mini architecture preview -->
+        <div class="card-nq p-4">
+          <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge badge-accent">LIVE FLOW</span>
+            <span style="font-size:0.78rem; color:var(--nq-muted);">how a query travels</span>
+          </div>
+          <div class="d-flex flex-column gap-2">
+            <div class="arch-box accent-border">
+              <div class="arch-label">USER</div>
+              "Which supplier had the worst on-time delivery in April?"
+            </div>
+            <div class="arch-arrow"><i class="bi bi-arrow-down"></i></div>
+            <div class="arch-box purple-border">
+              <div class="arch-label">ANTHROPIC CLAUDE</div>
+              SELECT supplier_name, otd_pct FROM fact_otd_by_supplier WHERE _month_key='2024_04' ORDER BY otd_pct ASC LIMIT 5
+            </div>
+            <div class="arch-arrow"><i class="bi bi-arrow-down"></i></div>
+            <div class="arch-box accent-border">
+              <div class="arch-label">DATABRICKS GOLD TABLE</div>
+              5 rows returned in 340ms
+            </div>
+            <div class="arch-arrow"><i class="bi bi-arrow-down"></i></div>
+            <div class="arch-box" style="border-color:rgba(61,214,140,0.3); color:#3dd68c;">
+              <div class="arch-label" style="color:var(--nq-muted);">NARRATED ANSWER</div>
+              "In April 2024, India Manufacturer Partner 042 had the lowest on-time delivery rate at 23.4%…"
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ ARCHITECTURE ════════════════════════════════════════════ -->
+<section id="architecture" class="py-5 mt-3">
+  <div class="container">
+    <p class="section-eyebrow">System Design</p>
+    <h2 class="section-title mb-4">Full stack architecture</h2>
+
+    <div class="row g-3">
+      <!-- Layer cards -->
+      <div class="col-md-4">
+        <div class="card-nq p-4 h-100">
+          <div class="d-flex align-items-center gap-2 mb-3">
+            <i class="bi bi-person-circle fs-4 accent"></i>
+            <span class="mono" style="font-size:0.85rem;">01 — User Layer</span>
+          </div>
+          <p style="color:var(--nq-muted); font-size:0.88rem; line-height:1.7;">
+            Flask 3.12 + Bootstrap 5 dark theme. Single-page chat UI.
+            Server-side session maintains conversation history.
+            AJAX calls to <code>/chat/message</code>.
+          </p>
+          <div class="d-flex flex-wrap gap-1 mt-3">
+            <span class="badge badge-accent">Flask</span>
+            <span class="badge badge-accent">Bootstrap 5</span>
+            <span class="badge badge-accent">Jinja2</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-4">
+        <div class="card-nq p-4 h-100">
+          <div class="d-flex align-items-center gap-2 mb-3">
+            <i class="bi bi-cpu fs-4 accent2"></i>
+            <span class="mono" style="font-size:0.85rem;">02 — Intelligence Layer</span>
+          </div>
+          <p style="color:var(--nq-muted); font-size:0.88rem; line-height:1.7;">
+            Anthropic Claude receives the user message + Gold schema context.
+            Returns SQL in a fenced code block. Results are sent back for
+            plain-English narration. Full multi-turn history maintained.
+          </p>
+          <div class="d-flex flex-wrap gap-1 mt-3">
+            <span class="badge badge-accent">claude-sonnet-4</span>
+            <span class="badge badge-accent">System prompt</span>
+            <span class="badge badge-accent">Multi-turn</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-4">
+        <div class="card-nq p-4 h-100">
+          <div class="d-flex align-items-center gap-2 mb-3">
+            <i class="bi bi-database fs-4" style="color:#f7c948;"></i>
+            <span class="mono" style="font-size:0.85rem;">03 — Data Layer</span>
+          </div>
+          <p style="color:var(--nq-muted); font-size:0.88rem; line-height:1.7;">
+            Databricks SQL Connector executes generated SQL against
+            Gold Delta tables in ADLS Gen2. Results streamed back as
+            columnar JSON. Row limit enforced. Unsafe SQL blocked.
+          </p>
+          <div class="d-flex flex-wrap gap-1 mt-3">
+            <span class="badge badge-accent">Databricks SQL</span>
+            <span class="badge badge-accent">Delta Lake</span>
+            <span class="badge badge-accent">ADLS Gen2</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Data flow -->
+    <div class="card-nq p-4 mt-4">
+      <p class="mono mb-3" style="font-size:0.75rem; color:var(--nq-muted);">// request → response data flow</p>
+      <div class="d-flex align-items-center flex-wrap gap-2" style="font-family:var(--nq-mono); font-size:0.78rem;">
+        <span class="badge badge-accent">Browser</span>
+        <i class="bi bi-arrow-right muted"></i>
+        <span class="badge badge-accent">Flask /chat/message</span>
+        <i class="bi bi-arrow-right muted"></i>
+        <span class="badge badge-accent">ChatService</span>
+        <i class="bi bi-arrow-right muted"></i>
+        <span class="badge badge-accent">AnthropicService → SQL</span>
+        <i class="bi bi-arrow-right muted"></i>
+        <span class="badge badge-accent">DatabricksClient → rows</span>
+        <i class="bi bi-arrow-right muted"></i>
+        <span class="badge badge-accent">AnthropicService → narration</span>
+        <i class="bi bi-arrow-right muted"></i>
+        <span class="badge badge-accent">JSON response</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ LIMITATIONS ═════════════════════════════════════════════ -->
+<section class="py-5" style="background: var(--nq-surface);">
+  <div class="container">
+    <p class="section-eyebrow" style="color:var(--nq-warn);">Honest Assessment</p>
+    <h2 class="section-title mb-2">What this architecture cannot do</h2>
+    <p style="color:var(--nq-muted); max-width:620px; margin-bottom:2rem;">
+      This is a batch analytics agent. It queries pre-computed, historical snapshots.
+      It is categorically different from an agent with live API access to transactional backends.
+    </p>
+
+    <div class="row g-3">
+      <div class="col-md-6">
+        <div class="limit-card h-100">
+          <div class="d-flex gap-3">
+            <i class="bi bi-clock-history limit-icon flex-shrink-0"></i>
+            <div>
+              <div class="fw-600 mb-1">Data is always stale</div>
+              <p class="muted mb-0" style="font-size:0.88rem; line-height:1.6;">
+                Gold tables reflect the last pipeline run — not what happened 5 minutes ago.
+                A supplier could have submitted an invoice 10 minutes ago and this agent
+                has no knowledge of it. For procurement operations requiring real-time
+                visibility, this architecture fails entirely.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6">
+        <div class="limit-card h-100">
+          <div class="d-flex gap-3">
+            <i class="bi bi-x-circle limit-icon flex-shrink-0"></i>
+            <div>
+              <div class="fw-600 mb-1">Cannot take action</div>
+              <p class="muted mb-0" style="font-size:0.88rem; line-height:1.6;">
+                This agent reads only. It cannot approve a PO, reject an invoice,
+                send a supplier notification, update a risk rating, or trigger
+                any workflow in SAP, Coupa, Ariba, or any ERP. It is a read-only
+                analytics window, not an operational agent.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6">
+        <div class="limit-card h-100">
+          <div class="d-flex gap-3">
+            <i class="bi bi-funnel limit-icon flex-shrink-0"></i>
+            <div>
+              <div class="fw-600 mb-1">Answers limited to Gold schema</div>
+              <p class="muted mb-0" style="font-size:0.88rem; line-height:1.6;">
+                If a question requires data that was not aggregated into a Gold fact table,
+                the agent cannot answer it. "Show me the line items on PO 00001234"
+                requires Silver data. "What is the current open PO count right now"
+                requires a live ERP call. The Gold layer trades completeness for speed.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6">
+        <div class="limit-card h-100">
+          <div class="d-flex gap-3">
+            <i class="bi bi-exclamation-triangle limit-icon flex-shrink-0"></i>
+            <div>
+              <div class="fw-600 mb-1">LLM-generated SQL can be wrong</div>
+              <p class="muted mb-0" style="font-size:0.88rem; line-height:1.6;">
+                Claude generates SQL based on schema descriptions in the system prompt.
+                It can hallucinate column names, produce logically incorrect joins,
+                or misinterpret ambiguous questions. Every result should be treated
+                as indicative, not authoritative, without human validation.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ COMPARISON TABLE ════════════════════════════════════════ -->
+<section class="py-5">
+  <div class="container">
+    <p class="section-eyebrow">Architectural Comparison</p>
+    <h2 class="section-title mb-4">Batch analytics agent vs live API agent</h2>
+
+    <div class="card-nq p-0 overflow-hidden">
+      <table class="table table-dark mb-0 compare-table">
+        <thead style="background:var(--nq-surface);">
+          <tr>
+            <th class="px-4 py-3" style="width:32%;">Capability</th>
+            <th class="px-4 py-3 text-center">This POC<br><small style="color:var(--nq-muted); font-family:var(--nq-sans);">Databricks + ADLS</small></th>
+            <th class="px-4 py-3 text-center">Live API Agent<br><small style="color:var(--nq-muted); font-family:var(--nq-sans);">Coupa / Ariba / SAP APIs</small></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="px-4 py-3">Real-time data freshness</td>
+            <td class="text-center no"><i class="bi bi-x-circle me-1"></i>Hours / days old</td>
+            <td class="text-center yes"><i class="bi bi-check-circle me-1"></i>Seconds old</td>
+          </tr>
+          <tr>
+            <td class="px-4 py-3">Historical trend analysis</td>
+            <td class="text-center yes"><i class="bi bi-check-circle me-1"></i>Excellent</td>
+            <td class="text-center partial"><i class="bi bi-dash-circle me-1"></i>API-dependent</td>
+          </tr>
+          <tr>
+            <td class="px-4 py-3">Execute workflow actions (approve PO, send alert)</td>
+            <td class="text-center no"><i class="bi bi-x-circle me-1"></i>Read only</td>
+            <td class="text-center yes"><i class="bi bi-check-circle me-1"></i>Full write access</td>
+          </tr>
+          <tr>
+            <td class="px-4 py-3">Multi-source cross-system joins</td>
+            <td class="text-center yes"><i class="bi bi-check-circle me-1"></i>Pre-joined in Gold</td>
+            <td class="text-center partial"><i class="bi bi-dash-circle me-1"></i>Complex orchestration</td>
+          </tr>
+          <tr>
+            <td class="px-4 py-3">Query performance at scale</td>
+            <td class="text-center yes"><i class="bi bi-check-circle me-1"></i>Sub-second on Gold</td>
+            <td class="text-center no"><i class="bi bi-x-circle me-1"></i>API rate limits apply</td>
+          </tr>
+          <tr>
+            <td class="px-4 py-3">Source system load impact</td>
+            <td class="text-center yes"><i class="bi bi-check-circle me-1"></i>Zero — reads ADLS</td>
+            <td class="text-center no"><i class="bi bi-x-circle me-1"></i>Hits prod DB/API</td>
+          </tr>
+          <tr>
+            <td class="px-4 py-3">KPI computed with business rules</td>
+            <td class="text-center yes"><i class="bi bi-check-circle me-1"></i>Gold layer encoded</td>
+            <td class="text-center partial"><i class="bi bi-dash-circle me-1"></i>Must compute in agent</td>
+          </tr>
+          <tr>
+            <td class="px-4 py-3">Infrastructure cost</td>
+            <td class="text-center partial"><i class="bi bi-dash-circle me-1"></i>Databricks DBU cost</td>
+            <td class="text-center yes"><i class="bi bi-check-circle me-1"></i>API calls only</td>
+          </tr>
+          <tr>
+            <td class="px-4 py-3">Answer: "Approve this invoice now"</td>
+            <td class="text-center no"><i class="bi bi-x-circle me-1"></i>Impossible</td>
+            <td class="text-center yes"><i class="bi bi-check-circle me-1"></i>Native capability</td>
+          </tr>
+          <tr>
+            <td class="px-4 py-3 border-0">Answer: "Trend of defect rates last 6 months"</td>
+            <td class="text-center yes border-0"><i class="bi bi-check-circle me-1"></i>Instant</td>
+            <td class="text-center no border-0"><i class="bi bi-x-circle me-1"></i>Requires data warehouse</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card-nq p-4 mt-4" style="border-color:rgba(0,212,255,0.2);">
+      <div class="d-flex gap-3">
+        <i class="bi bi-lightbulb-fill accent fs-4 flex-shrink-0"></i>
+        <p class="mb-0" style="color:var(--nq-muted); font-size:0.92rem; line-height:1.7;">
+          <strong style="color:var(--nq-text);">The right architecture for your organization</strong> is almost always both.
+          A batch analytics agent (this POC) handles strategic KPI reporting, trend analysis,
+          and executive dashboards. A live API agent handles operational workflows —
+          approvals, alerts, and real-time lookups. They are complementary, not competing.
+          The data warehouse feeds the analytics agent. The transactional system feeds the operational agent.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ CTA ══════════════════════════════════════════════════════ -->
+<section class="py-5 text-center" style="background:var(--nq-surface);">
+  <div class="container">
+    <h2 class="section-title mb-2">Ready to query?</h2>
+    <p class="muted mb-4">Start the Databricks cluster, then ask your first procurement question.</p>
+    <a href="/chatbot" class="btn-nq fs-6">
+      <i class="bi bi-chat-dots me-2"></i>Open NexusQuery Chat
+    </a>
+  </div>
+</section>
+
+{% endblock %}

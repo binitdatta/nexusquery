@@ -1,0 +1,77 @@
+# ──────────────────────────────────────────────────────────
+# NexusQuery .gitignore
+# ──────────────────────────────────────────────────────────
+
+# Environment & secrets — NEVER commit these
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets.json
+README_PRIVATE.md
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+*.egg
+.eggs/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# PyCharm / JetBrains
+.idea/
+*.iml
+*.iws
+*.ipr
+.idea_modules/
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# Logs
+*.log
+logs/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Test / coverage
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+nosetests.xml
+coverage.xml
+*.cover
+
+# Distribution
+*.tar.gz
+*.zip
+
+# Flask instance folder
+instance/
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# Databricks
+.databricks/
