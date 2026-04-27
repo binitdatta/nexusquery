@@ -191,3 +191,9 @@ EOF
 
 python3 /tmp/test_db.py
 ```
+
+## Run
+
+``` 
+gunicorn -c gunicorn.conf.py "main:app"
+```
