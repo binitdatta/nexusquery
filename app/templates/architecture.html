@@ -1,0 +1,728 @@
+{% extends "base.html" %}
+{% block title %}NexusQuery — Architecture{% endblock %}
+
+{% block extra_head %}
+<style>
+/* ── Page scaffold ── */
+/* Override muted text to white for better visibility */
+.section-sub,
+.layer-desc,
+.insight-body,
+.muted,
+[style*="color:var(--nq-muted)"],
+[style*="color: var(--nq-muted)"] {
+  color: #e8edf8 !important;
+}
+
+.diagram-caption,
+.pipe-label,
+.layer-num,
+.diagram-card-title,
+.tech-pill.pill-gray {
+  color: #b0bdd4 !important;
+}
+
+p.section-sub {
+  color: #e8edf8 !important;
+}
+
+.arch-hero {
+  padding: 4rem 0 2rem;
+  position: relative;
+  overflow: hidden;
+}
+.arch-hero-grid {
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+}
+.arch-hero-glow {
+  position: absolute;
+  width: 500px; height: 500px;
+  background: radial-gradient(circle, rgba(123,94,248,0.10) 0%, transparent 70%);
+  top: -120px; left: -100px;
+  pointer-events: none;
+}
+
+/* ── Section headings ── */
+.section-eyebrow {
+  font-family: var(--nq-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.18em;
+  color: var(--nq-accent);
+  text-transform: uppercase;
+  margin-bottom: 0.4rem;
+}
+.section-title {
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: #d8e2f4;
+  line-height: 1.25;
+}
+.section-sub {
+  color: var(--nq-muted);
+  font-size: 0.95rem;
+  line-height: 1.7;
+  max-width: 640px;
+}
+
+/* ── Diagram image card ── */
+.diagram-card {
+  background: var(--nq-card);
+  border: 1px solid var(--nq-border);
+  border-radius: 16px;
+  overflow: hidden;
+  position: relative;
+}
+.diagram-card-header {
+  background: var(--nq-surface);
+  border-bottom: 1px solid var(--nq-border);
+  padding: 0.75rem 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.diagram-card-dots {
+  display: flex; gap: 6px;
+}
+.diagram-card-dots span {
+  width: 10px; height: 10px; border-radius: 50%;
+}
+.dot-red   { background: #ff5f57; }
+.dot-amber { background: #febc2e; }
+.dot-green { background: #28c840; }
+.diagram-card-title {
+  font-family: var(--nq-mono);
+  font-size: 0.72rem;
+  color: var(--nq-muted);
+  margin: 0;
+  letter-spacing: 0.05em;
+}
+.diagram-img-wrap {
+  padding: 1.5rem;
+  background: #FFFFFF;
+}
+.diagram-img-wrap img {
+  width: 100%;
+  border-radius: 8px;
+  display: block;
+}
+.diagram-caption {
+  padding: 0.9rem 1.25rem;
+  font-family: var(--nq-mono);
+  font-size: 0.72rem;
+  color: var(--nq-muted);
+  border-top: 1px solid var(--nq-border);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* ── Layer breakdown cards ── */
+.layer-timeline {
+  position: relative;
+  padding-left: 2.5rem;
+}
+.layer-timeline::before {
+  content: '';
+  position: absolute;
+  left: 0.85rem;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: linear-gradient(to bottom, var(--nq-accent), var(--nq-accent2), transparent);
+  opacity: 0.25;
+}
+.layer-item {
+  position: relative;
+  margin-bottom: 1.5rem;
+}
+.layer-item::before {
+  content: '';
+  position: absolute;
+  left: -1.75rem;
+  top: 1.1rem;
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  border: 2px solid var(--nq-accent);
+  background: var(--nq-bg);
+}
+.layer-card {
+  background: var(--nq-card);
+  border: 1px solid var(--nq-border);
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+  transition: border-color 0.2s;
+}
+.layer-card:hover { border-color: rgba(0,212,255,0.3); }
+.layer-card.accent-l  { border-left: 3px solid var(--nq-accent); }
+.layer-card.purple-l  { border-left: 3px solid var(--nq-accent2); }
+.layer-card.amber-l   { border-left: 3px solid #f7c948; }
+.layer-card.teal-l    { border-left: 3px solid #3dd68c; }
+.layer-card.orange-l  { border-left: 3px solid var(--nq-warn); }
+.layer-num {
+  font-family: var(--nq-mono);
+  font-size: 0.65rem;
+  color: var(--nq-muted);
+  letter-spacing: 0.1em;
+  margin-bottom: 0.25rem;
+}
+.layer-name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #d8e2f4;
+  margin-bottom: 0.5rem;
+}
+.layer-desc {
+  font-size: 0.88rem;
+  color: var(--nq-muted);
+  line-height: 1.7;
+  margin-bottom: 0.75rem;
+}
+.layer-tech {
+  display: flex; flex-wrap: wrap; gap: 6px;
+}
+.tech-pill {
+  font-family: var(--nq-mono);
+  font-size: 0.68rem;
+  padding: 2px 10px;
+  border-radius: 20px;
+  border: 1px solid;
+}
+.pill-cyan   { color: var(--nq-accent);  border-color: rgba(0,212,255,0.3);  background: rgba(0,212,255,0.07); }
+.pill-purple { color: #a78bfa;           border-color: rgba(167,139,250,0.3); background: rgba(167,139,250,0.07); }
+.pill-amber  { color: #f7c948;           border-color: rgba(247,201,72,0.3);  background: rgba(247,201,72,0.07); }
+.pill-green  { color: #3dd68c;           border-color: rgba(61,214,140,0.3);  background: rgba(61,214,140,0.07); }
+.pill-orange { color: #ff9f7f;           border-color: rgba(255,107,53,0.3);  background: rgba(255,107,53,0.07); }
+.pill-gray   { color: var(--nq-muted);   border-color: rgba(90,106,136,0.3);  background: rgba(90,106,136,0.07); }
+
+/* ── Key insight boxes ── */
+.insight-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
+}
+.insight-card {
+  background: var(--nq-card);
+  border: 1px solid var(--nq-border);
+  border-radius: 12px;
+  padding: 1.25rem;
+}
+.insight-icon {
+  width: 38px; height: 38px;
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1rem;
+  margin-bottom: 0.75rem;
+}
+.icon-cyan   { background: rgba(0,212,255,0.1);  color: var(--nq-accent); }
+.icon-purple { background: rgba(123,94,248,0.1); color: #a78bfa; }
+.icon-amber  { background: rgba(247,201,72,0.1); color: #f7c948; }
+.icon-green  { background: rgba(61,214,140,0.1); color: #3dd68c; }
+.insight-title {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: #d8e2f4;
+  margin-bottom: 0.4rem;
+}
+.insight-body {
+  font-size: 0.83rem;
+  color: var(--nq-muted);
+  line-height: 1.65;
+}
+
+/* ── Flow pipeline ── */
+.pipeline {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+}
+.pipe-step {
+  flex: 1;
+  min-width: 130px;
+  background: var(--nq-card);
+  border-top: 1px solid var(--nq-border);
+  border-bottom: 1px solid var(--nq-border);
+  border-left: 1px solid var(--nq-border);
+  padding: 1rem 0.9rem;
+  position: relative;
+}
+.pipe-step:first-child { border-radius: 10px 0 0 10px; }
+.pipe-step:last-child  { border-right: 1px solid var(--nq-border); border-radius: 0 10px 10px 0; }
+.pipe-step::after {
+  content: '›';
+  position: absolute;
+  right: -10px; top: 50%;
+  transform: translateY(-50%);
+  font-size: 1.2rem;
+  color: var(--nq-muted);
+  z-index: 1;
+}
+.pipe-step:last-child::after { display: none; }
+.pipe-label {
+  font-family: var(--nq-mono);
+  font-size: 0.6rem;
+  color: var(--nq-muted);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.pipe-name {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #c9d4e8;
+}
+
+/* ── Animations ── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fadeUp 0.55s ease both; }
+.d1 { animation-delay: 0.05s; }
+.d2 { animation-delay: 0.12s; }
+.d3 { animation-delay: 0.20s; }
+.d4 { animation-delay: 0.28s; }
+.d5 { animation-delay: 0.36s; }
+.d6 { animation-delay: 0.44s; }
+.d7 { animation-delay: 0.52s; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- ═══ HERO ═══════════════════════════════════════════ -->
+<section class="arch-hero">
+  <div class="arch-hero-grid"></div>
+  <div class="arch-hero-glow"></div>
+  <div class="container">
+    <div class="fade-up d1">
+      <p class="section-eyebrow">System Architecture</p>
+      <h1 class="section-title">How NexusQuery works</h1>
+      <p class="section-sub mt-2">
+        A natural language question travels through five layers before returning
+        as a narrated answer — Claude generates SQL, DuckDB executes it directly
+        against Gold Delta tables in ADLS Gen2, and Claude narrates the result.
+        No Databricks cluster required at query time.
+      </p>
+    </div>
+
+    <!-- Pipeline bar -->
+    <div class="pipeline mt-4 fade-up d2">
+      <div class="pipe-step">
+        <div class="pipe-label">Layer 1</div>
+        <div class="pipe-name" style="color:var(--nq-accent);">User</div>
+      </div>
+      <div class="pipe-step">
+        <div class="pipe-label">Layer 2</div>
+        <div class="pipe-name">Flask App</div>
+      </div>
+      <div class="pipe-step">
+        <div class="pipe-label">Layer 3</div>
+        <div class="pipe-name" style="color:#a78bfa;">Claude LLM</div>
+      </div>
+      <div class="pipe-step">
+        <div class="pipe-label">Layer 4</div>
+        <div class="pipe-name" style="color:#f7c948;">DuckDB</div>
+      </div>
+      <div class="pipe-step">
+        <div class="pipe-label">Layer 5</div>
+        <div class="pipe-name" style="color:#3dd68c;">ADLS Gen2</div>
+      </div>
+      <div class="pipe-step">
+        <div class="pipe-label">Layer 6</div>
+        <div class="pipe-name" style="color:var(--nq-accent);">Answer</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ DIAGRAM ══════════════════════════════════════════ -->
+<section class="py-4">
+  <div class="container">
+    <div class="row g-4 align-items-start">
+
+      <!-- Diagram image -->
+      <div class="col-lg-8 fade-up d2">
+        <div class="diagram-card">
+          <div class="diagram-card-header">
+            <div class="diagram-card-dots">
+              <span class="dot-red"></span>
+              <span class="dot-amber"></span>
+              <span class="dot-green"></span>
+            </div>
+            <p class="diagram-card-title">nexusquery_architecture.svg — end-to-end query flow</p>
+          </div>
+          <div class="diagram-img-wrap">
+            <img
+              src="{{ url_for('static', filename='img/nexusquery_architecture.png') }}"
+              alt="NexusQuery end-to-end architecture diagram showing query flow through Claude, DuckDB, and ADLS Gen2"
+            />
+          </div>
+          <div class="diagram-caption">
+            <i class="bi bi-info-circle"></i>
+            Seven steps from English question to narrated answer · DuckDB reads Gold Delta files directly · no Databricks cluster at query time
+          </div>
+        </div>
+      </div>
+
+      <!-- Key insights sidebar -->
+      <div class="col-lg-4 fade-up d3">
+        <p class="section-eyebrow">Key design decisions</p>
+        <div class="d-flex flex-column gap-3">
+
+          <div class="insight-card">
+            <div class="insight-icon icon-amber">
+              <i class="bi bi-lightning-charge-fill"></i>
+            </div>
+            <div class="insight-title">DuckDB replaces Databricks at query time</div>
+            <div class="insight-body">
+              DuckDB runs inside the Flask process. No cluster cold-start,
+              no DBU charges, no HTTPS round-trip to Databricks. Gold Delta files
+              are read directly from ADLS Gen2 via the azure extension.
+              First query ~1–2s. Subsequent queries ~50–200ms.
+            </div>
+          </div>
+
+          <div class="insight-card">
+            <div class="insight-icon icon-purple">
+              <i class="bi bi-cpu-fill"></i>
+            </div>
+            <div class="insight-title">Two Claude calls per question</div>
+            <div class="insight-body">
+              Call 1: schema context + question → SQL.
+              Call 2: SQL + query results → plain English narration.
+              Claude never sees raw data directly — only the result set.
+            </div>
+          </div>
+
+          <div class="insight-card">
+            <div class="insight-icon icon-green">
+              <i class="bi bi-shield-check-fill"></i>
+            </div>
+            <div class="insight-title">SQL safety guard</div>
+            <div class="insight-body">
+              <code style="font-size:0.8rem; color:var(--nq-accent);">is_safe_sql()</code>
+              inspects every Claude-generated query before DuckDB executes it.
+              DROP, DELETE, INSERT, UPDATE, and all DDL are blocked regardless
+              of how the question is phrased.
+            </div>
+          </div>
+
+          <div class="insight-card">
+            <div class="insight-icon icon-cyan">
+              <i class="bi bi-database-fill-check"></i>
+            </div>
+            <div class="insight-title">Databricks only for the pipeline</div>
+            <div class="insight-body">
+              <code style="font-size:0.8rem; color:var(--nq-accent);">poc-cluster</code>
+              runs Bronze → Silver → Gold notebooks on demand, then terminates.
+              The chatbot never needs it. Monthly demo cost: ~$1.
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ LAYER BREAKDOWN ════════════════════════════════ -->
+<section class="py-5" style="background: var(--nq-surface);">
+  <div class="container">
+    <div class="row g-5">
+      <div class="col-lg-5">
+        <p class="section-eyebrow">Layer by layer</p>
+        <h2 class="section-title mb-2">What happens at each step</h2>
+        <p class="section-sub">
+          Each layer has one responsibility. The layered design means
+          swapping DuckDB for Trino, or Claude for another LLM, requires
+          changing exactly one file.
+        </p>
+        <div class="mt-4 card-nq p-3">
+          <div class="mono mb-2" style="font-size:0.68rem; color:var(--nq-muted); letter-spacing:0.1em;">// FULL REQUEST PATH</div>
+          <div style="font-family:var(--nq-mono); font-size:0.75rem; line-height:2; color:var(--nq-text);">
+            Browser<br>
+            <span style="color:var(--nq-muted);">→</span> POST /chat/message<br>
+            <span style="color:var(--nq-muted);">→</span> <span style="color:var(--nq-accent);">ChatService.process_turn()</span><br>
+            <span style="color:var(--nq-muted);">→</span> schema_context.py injected<br>
+            <span style="color:var(--nq-muted);">→</span> <span style="color:#a78bfa;">AnthropicService.get_sql()</span><br>
+            <span style="color:var(--nq-muted);">→</span> is_safe_sql() guard<br>
+            <span style="color:var(--nq-muted);">→</span> <span style="color:#f7c948;">DatabricksClient.execute_query()</span><br>
+            <span style="color:var(--nq-muted);">→</span> DuckDB → delta_scan() → ADLS<br>
+            <span style="color:var(--nq-muted);">→</span> <span style="color:#a78bfa;">AnthropicService.narrate_results()</span><br>
+            <span style="color:var(--nq-muted);">→</span> <span style="color:#3dd68c;">JSON response → browser</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-7">
+        <div class="layer-timeline">
+
+          <div class="layer-item fade-up d1">
+            <div class="layer-card accent-l">
+              <div class="layer-num">STEP 01 — USER LAYER</div>
+              <div class="layer-name">Browser → Flask</div>
+              <div class="layer-desc">
+                The user types a natural language procurement question into the
+                Bootstrap 5 chat interface. JavaScript sends a POST request to
+                <code>/chat/message</code> with the question and full conversation
+                history. Flask session maintains multi-turn context.
+              </div>
+              <div class="layer-tech">
+                <span class="tech-pill pill-cyan">Flask 3.1</span>
+                <span class="tech-pill pill-cyan">Bootstrap 5 dark</span>
+                <span class="tech-pill pill-cyan">Jinja2</span>
+                <span class="tech-pill pill-gray">gunicorn</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="layer-item fade-up d2">
+            <div class="layer-card accent-l">
+              <div class="layer-num">STEP 02 — APP LAYER</div>
+              <div class="layer-name">ChatService + schema injection</div>
+              <div class="layer-desc">
+                <code>ChatService.process_turn()</code> orchestrates the full
+                request. It loads <code>schema_context.py</code> which injects
+                all six Gold table schemas and ten SQL rules into the system
+                prompt. Rules include: no catalog prefix, budget join key
+                normalization, OTD region join pattern, and fact table constraints.
+              </div>
+              <div class="layer-tech">
+                <span class="tech-pill pill-cyan">ChatService</span>
+                <span class="tech-pill pill-cyan">schema_context.py</span>
+                <span class="tech-pill pill-gray">6 Gold schemas</span>
+                <span class="tech-pill pill-gray">10 SQL rules</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="layer-item fade-up d3">
+            <div class="layer-card purple-l">
+              <div class="layer-num">STEP 03 &amp; 06 — INTELLIGENCE LAYER</div>
+              <div class="layer-name">Anthropic Claude — two calls</div>
+              <div class="layer-desc">
+                <strong style="color:#d8e2f4;">Call 1 — SQL generation:</strong>
+                Claude receives the enriched system prompt + user question.
+                It returns a single <code>```sql</code> block, nothing else.
+                <br><br>
+                <strong style="color:#d8e2f4;">Call 2 — Narration:</strong>
+                After DuckDB returns results, Claude receives the SQL + result
+                rows and narrates the findings in plain English with business context.
+              </div>
+              <div class="layer-tech">
+                <span class="tech-pill pill-purple">claude-sonnet-4</span>
+                <span class="tech-pill pill-purple">api.anthropic.com</span>
+                <span class="tech-pill pill-gray">NL → SQL</span>
+                <span class="tech-pill pill-gray">results → narration</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="layer-item fade-up d4">
+            <div class="layer-card amber-l">
+              <div class="layer-num">STEP 04 — QUERY ENGINE</div>
+              <div class="layer-name">DuckDB — embedded in Flask process</div>
+              <div class="layer-desc">
+                DuckDB is not a separate server. It runs inside the gunicorn
+                worker process. On startup it installs the <code>delta</code>
+                and <code>azure</code> extensions, authenticates to ADLS Gen2
+                using the storage account key, and registers six
+                <code>delta_scan()</code> views — one per Gold fact table.
+                <br><br>
+                At query time: reads the Delta transaction log, applies predicate
+                and projection pushdown, streams only the needed Parquet columns
+                from ADLS Gen2, and returns rows in milliseconds.
+              </div>
+              <div class="layer-tech">
+                <span class="tech-pill pill-amber">DuckDB</span>
+                <span class="tech-pill pill-amber">delta extension</span>
+                <span class="tech-pill pill-amber">azure extension</span>
+                <span class="tech-pill pill-gray">in-process</span>
+                <span class="tech-pill pill-gray">no cluster</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="layer-item fade-up d5">
+            <div class="layer-card teal-l">
+              <div class="layer-num">STEP 05 — STORAGE LAYER</div>
+              <div class="layer-name">ADLS Gen2 — Gold Delta tables</div>
+              <div class="layer-desc">
+                Six Gold fact tables live in the <code>gold/</code> container of
+                the ADLS Gen2 storage account as Delta Lake files (Parquet +
+                transaction log). They were written by the Databricks Gold
+                notebook using <code>abfss://</code> protocol and are read by
+                DuckDB via the same protocol.
+                <br><br>
+                Data range: January 2024 – June 2024. Tables: spend by supplier,
+                spend by category, OTD by supplier, invoice match, budget
+                variance, defect rate.
+              </div>
+              <div class="layer-tech">
+                <span class="tech-pill pill-green">ADLS Gen2</span>
+                <span class="tech-pill pill-green">Delta Lake</span>
+                <span class="tech-pill pill-green">Parquet</span>
+                <span class="tech-pill pill-gray">abfss://</span>
+                <span class="tech-pill pill-gray">HNS enabled</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="layer-item fade-up d6" style="margin-bottom:0;">
+            <div class="layer-card orange-l">
+              <div class="layer-num">STEP 07 — PIPELINE LAYER  (offline)</div>
+              <div class="layer-name">Azure Databricks — Bronze → Silver → Gold</div>
+              <div class="layer-desc">
+                The <code>poc-cluster</code> (Standard_DS3_v2, Runtime 15.4 LTS)
+                runs three notebooks to populate the Gold tables from raw CSV
+                files. It is not used by the chatbot. It is started manually
+                when new data needs to be processed, and terminated immediately
+                after the Gold notebook completes.
+                <br><br>
+                Cost: ~$0.61/hour while running. Zero when terminated.
+              </div>
+              <div class="layer-tech">
+                <span class="tech-pill pill-orange">Azure Databricks Premium</span>
+                <span class="tech-pill pill-orange">Spark 3.5</span>
+                <span class="tech-pill pill-orange">Unity Catalog</span>
+                <span class="tech-pill pill-gray">offline only</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ GOLD TABLES ════════════════════════════════════ -->
+<section class="py-5">
+  <div class="container">
+    <p class="section-eyebrow">Data Model</p>
+    <h2 class="section-title mb-1">Six Gold fact tables</h2>
+    <p class="section-sub mb-4">
+      Pre-computed KPI aggregates. DuckDB registers each as a view via
+      <code>delta_scan()</code> at startup. Claude queries them by plain name —
+      no catalog or schema prefix needed.
+    </p>
+    <div class="row g-3">
+
+      <div class="col-md-6 col-lg-4 fade-up d1">
+        <div class="card-nq p-3 h-100">
+          <div class="d-flex align-items-center gap-2 mb-2">
+            <i class="bi bi-graph-up-arrow" style="color:var(--nq-accent);"></i>
+            <span class="mono" style="font-size:0.78rem; color:var(--nq-accent);">fact_spend_by_supplier</span>
+          </div>
+          <div class="muted" style="font-size:0.83rem; line-height:1.6;">Monthly spend per supplier with tier and region breakdown.</div>
+          <div class="mt-2 d-flex flex-wrap gap-1">
+            <span class="tech-pill pill-gray">supplier_id</span>
+            <span class="tech-pill pill-gray">tier</span>
+            <span class="tech-pill pill-gray">region</span>
+            <span class="tech-pill pill-gray">_month_key</span>
+            <span class="tech-pill pill-gray">total_spend</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6 col-lg-4 fade-up d2">
+        <div class="card-nq p-3 h-100">
+          <div class="d-flex align-items-center gap-2 mb-2">
+            <i class="bi bi-tags-fill" style="color:var(--nq-accent);"></i>
+            <span class="mono" style="font-size:0.78rem; color:var(--nq-accent);">fact_spend_by_category</span>
+          </div>
+          <div class="muted" style="font-size:0.83rem; line-height:1.6;">Monthly spend per category with parent category and spend band.</div>
+          <div class="mt-2 d-flex flex-wrap gap-1">
+            <span class="tech-pill pill-gray">category_name</span>
+            <span class="tech-pill pill-gray">parent_category</span>
+            <span class="tech-pill pill-gray">spend_band</span>
+            <span class="tech-pill pill-gray">total_spend</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6 col-lg-4 fade-up d3">
+        <div class="card-nq p-3 h-100">
+          <div class="d-flex align-items-center gap-2 mb-2">
+            <i class="bi bi-truck" style="color:#f7c948;"></i>
+            <span class="mono" style="font-size:0.78rem; color:#f7c948;">fact_otd_by_supplier</span>
+          </div>
+          <div class="muted" style="font-size:0.83rem; line-height:1.6;">On-time delivery % per supplier per month. Join to spend table for region.</div>
+          <div class="mt-2 d-flex flex-wrap gap-1">
+            <span class="tech-pill pill-gray">supplier_name</span>
+            <span class="tech-pill pill-gray">tier</span>
+            <span class="tech-pill pill-gray">total_deliveries</span>
+            <span class="tech-pill pill-gray">otd_pct</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6 col-lg-4 fade-up d4">
+        <div class="card-nq p-3 h-100">
+          <div class="d-flex align-items-center gap-2 mb-2">
+            <i class="bi bi-receipt-cutoff" style="color:#a78bfa;"></i>
+            <span class="mono" style="font-size:0.78rem; color:#a78bfa;">fact_invoice_match</span>
+          </div>
+          <div class="muted" style="font-size:0.83rem; line-height:1.6;">Invoice match rate — % of invoices within 1% of PO value — and average variance.</div>
+          <div class="mt-2 d-flex flex-wrap gap-1">
+            <span class="tech-pill pill-gray">invoice_count</span>
+            <span class="tech-pill pill-gray">match_rate_pct</span>
+            <span class="tech-pill pill-gray">avg_variance_pct</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6 col-lg-4 fade-up d5">
+        <div class="card-nq p-3 h-100">
+          <div class="d-flex align-items-center gap-2 mb-2">
+            <i class="bi bi-bar-chart-fill" style="color:#3dd68c;"></i>
+            <span class="mono" style="font-size:0.78rem; color:#3dd68c;">fact_budget_variance</span>
+          </div>
+          <div class="muted" style="font-size:0.83rem; line-height:1.6;">Budget vs actual spend by plant and category. No supplier_id — join on plant_id and category_id only.</div>
+          <div class="mt-2 d-flex flex-wrap gap-1">
+            <span class="tech-pill pill-gray">plant_id</span>
+            <span class="tech-pill pill-gray">variance_pct</span>
+            <span class="tech-pill pill-gray">status</span>
+            <span class="tech-pill pill-gray">month_join_key</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6 col-lg-4 fade-up d6">
+        <div class="card-nq p-3 h-100">
+          <div class="d-flex align-items-center gap-2 mb-2">
+            <i class="bi bi-bug-fill" style="color:var(--nq-warn);"></i>
+            <span class="mono" style="font-size:0.78rem; color:var(--nq-warn);">fact_defect_rate</span>
+          </div>
+          <div class="muted" style="font-size:0.83rem; line-height:1.6;">Defect events and defect rate % per supplier per month. Lower is better.</div>
+          <div class="mt-2 d-flex flex-wrap gap-1">
+            <span class="tech-pill pill-gray">defect_events</span>
+            <span class="tech-pill pill-gray">total_defect_qty</span>
+            <span class="tech-pill pill-gray">defect_rate_pct</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ═══ CTA ════════════════════════════════════════════ -->
+<section class="py-5 text-center" style="background: var(--nq-surface);">
+  <div class="container fade-up">
+    <h2 class="section-title mb-2">Ready to query the data?</h2>
+    <p class="muted mb-4">Ask a procurement question in plain English and watch the full pipeline run.</p>
+    <a href="/chatbot" class="btn-nq fs-6">
+      <i class="bi bi-chat-dots me-2"></i>Open NexusQuery Chat
+    </a>
+  </div>
+</section>
+
+{% endblock %}

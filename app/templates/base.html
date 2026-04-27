@@ -24,8 +24,8 @@
       --nq-accent2:   #7b5ef8;
       --nq-warn:      #ff6b35;
       --nq-text:      #c9d4e8;
-      --nq-muted:     #5a6a88;
-      --nq-mono:      'Space Mono', monospace;
+        --nq-muted: #c9d4e8;
+        --nq-mono:      'Space Mono', monospace;
       --nq-sans:      'DM Sans', sans-serif;
     }
     body {
@@ -85,6 +85,12 @@
         <li class="nav-item"><a class="nav-link {% if request.endpoint == 'home.chatbot' %}active{% endif %}" href="/chatbot">
           <i class="bi bi-chat-dots me-1"></i>Chat
         </a></li>
+      <li class="nav-item">
+          <a class="nav-link {% if request.endpoint == 'home.architecture' %}active{% endif %}"
+             href="/architecture">
+            <i class="bi bi-diagram-3 me-1"></i>Architecture
+          </a>
+      </li>
         <li class="nav-item"><a class="nav-link" href="/health/"><i class="bi bi-heart-pulse me-1"></i>Health</a></li>
       </ul>
     </div>

@@ -195,5 +195,9 @@ python3 /tmp/test_db.py
 ## Run
 
 ``` 
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+pip install --upgrade pip
 gunicorn -c gunicorn.conf.py "main:app"
 ```
